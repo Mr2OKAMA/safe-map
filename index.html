@@ -33,8 +33,8 @@
     }).addTo(map);
 
     // 中心マーカー
-    L.marker([35.4067, 136.8485]).addTo(map)
-      .bindPopup('ここが岐阜県の中心付近です');
+    L.marker([35.380680426757515, 136.8764554697545]).addTo(map)
+      .bindPopup('木曽川右岸管理事務所');
 
     // ▼ 通行止め情報 ▼
     fetch("https://www.mlit.go.jp/road/roadinfo/raxtms/xml/tokai.xml")
@@ -75,8 +75,31 @@
           .bindPopup(`岐阜市<br>現在の雨量: ${rain} mm/h`)
           .openPopup();
       });
+
+    // ▼ 気象警報・注意報 ▼
+    fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=35.42&lon=136.76&exclude=hourly,daily&appid=${apiKey}&lang=ja`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.alerts) {
+          data.alerts.forEach(alert => {
+            const alertType = alert.event;
+            const alertDescription = alert.description;
+            const alertSeverity = alert.severity;
+
+            // マーカーを地図に追加
+            L.marker([35.42, 136.76], {
+              icon: L.divIcon({
+                className: "traffic-icon",
+                html: "⚠️",
+                iconSize: [20, 20]
+              })
+            })
+            .addTo(map)
+            .bindPopup(`<b>警報/注意報</b><br>${alertType}<br>${alertDescription}`);
+          });
+        }
+      });
   </script>
 </body>
 </html>
-
 
