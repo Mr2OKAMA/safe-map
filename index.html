@@ -1,81 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <title>岐阜県 安全マップ</title>
+  <meta charset="UTF-8">
+  <title>雨量マップ表示</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet地図ライブラリ -->
+  <!-- LeafletのCSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    .traffic-icon {
-      font-size: 20px;
-      text-align: center;
-      line-height: 1.2;
-    }
     #map {
       height: 100vh;
+      width: 100%;
     }
   </style>
 </head>
 <body>
-  <div id="map"></div>
 
-  <!-- Leaflet JS 読み込み -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="map"></div>
 
-  <script>
-    // 地図の初期化
-    const map = L.map('map').setView([35.4067, 136.8485], 11); // 岐阜県中部
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    // タイルレイヤー追加（OpenStreetMap）
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+<script>
+  const apiKey = "1e0037b35b9c3f8906cc222beac04c04";
 
-    // 中心マーカー
-    L.marker([35.380680426757515, 136.8764554697545]).addTo(map)
-      .bindPopup('木曽川右岸管理事務所<br>現在の雨量: ${} mm/h');
+  const map = L.map('map').setView([35.4, 136.85], 10); // 岐阜中心
 
-    // ▼ 通行止め情報 ▼
-    fetch("https://www.mlit.go.jp/road/roadinfo/raxtms/xml/tokai.xml")
-      .then(response => response.text())
-      .then(str => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(str, "application/xml");
+  // OpenStreetMapのタイル追加
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 
-        const items = xmlDoc.getElementsByTagName("item");
-        for (let i = 0; i < items.length; i++) {
-          const type = items[i].getElementsByTagName("type")[0]?.textContent;
-          const lat = parseFloat(items[i].getElementsByTagName("latitude")[0]?.textContent);
-          const lon = parseFloat(items[i].getElementsByTagName("longitude")[0]?.textContent);
-          const road = items[i].getElementsByTagName("road")[0]?.textContent;
-          const reason = items[i].getElementsByTagName("reason")[0]?.textContent;
-
-          if (type === "通行止") {
-            L.marker([lat, lon], {
-              icon: L.divIcon({
-                className: "traffic-icon",
-                html: "🚧",
-                iconSize: [20, 20]
-              })
-            })
-            .addTo(map)
-            .bindPopup(`<b>${road}</b><br>${reason}`);
-          }
-        }
-      });
-
-    // ▼ OpenWeatherMap 雨量情報 ▼
-    const apiKey = "1e0037b35b9c3f8906cc222beac04c04"; // あなたのAPIキー
-    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=35.42&lon=136.76&units=metric&appid=${apiKey}&lang=ja`)
+  // 雨量取得＆マーカー表示関数
+  function addRainMarker(lat, lon, name) {
+    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}&lang=ja`)
       .then(response => response.json())
       .then(data => {
         const rain = data.rain ? data.rain['1h'] || 0 : 0;
-        L.marker([35.42, 136.76]).addTo(map)
-          .bindPopup(`岐阜市<br>現在の雨量: ${rain} mm/h`)
-          .openPopup();
-      });
+        const popupText = `${name}<br>現在の雨量: ${rain} mm/h`;
 
+        L.marker([lat, lon]).addTo(map)
+          .bindPopup(popupText);
+      })
+      .catch(error => {
+        console.error(`${name} のデータ取得失敗`, error);
+      });
+  }
+
+  // 観測地点ごとの表示
+  addRainMarker(35.380680, 136.876455, "木曽川右岸管理事務所");
+  addRainMarker(35.42, 136.76, "岐阜市");
+
+  // ▼ 警報・通行止め等を表示する場合は以下に追加
+  // L.circle(...), L.polyline(...), L.marker(...), .bindPopup(...) など
+
+</script>
+
+</body>
+</html>
+<script>
+<body>
+  <html>
     // ▼ 気象警報・注意報 ▼
     fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=35.42&lon=136.76&exclude=hourly,daily&appid=${apiKey}&lang=ja`)
       .then(response => response.json())
