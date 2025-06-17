@@ -7,7 +7,14 @@
   <!-- Leaflet地図ライブラリ -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    #map { height: 100vh; }
+    .traffic-icon {
+      font-size: 20px;
+      text-align: center;
+      line-height: 1.2;
+    }
+    #map {
+      height: 100vh;
+    }
   </style>
 </head>
 <body>
@@ -29,10 +36,37 @@
     L.marker([35.4067, 136.8485]).addTo(map)
       .bindPopup('ここが岐阜県の中心付近です');
 
-    // ▼ OpenWeatherMap API ▼
-    const apiKey = "1e0037b35b9c3f8906cc222beac04c04"; // ← OpenWeatherMap で取得したキーを入れてください
+    // ▼ 通行止め情報 ▼
+    fetch("https://www.mlit.go.jp/road/roadinfo/raxtms/xml/tokai.xml")
+      .then(response => response.text())
+      .then(str => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(str, "application/xml");
 
-    // 岐阜市の天気データ取得
+        const items = xmlDoc.getElementsByTagName("item");
+        for (let i = 0; i < items.length; i++) {
+          const type = items[i].getElementsByTagName("type")[0]?.textContent;
+          const lat = parseFloat(items[i].getElementsByTagName("latitude")[0]?.textContent);
+          const lon = parseFloat(items[i].getElementsByTagName("longitude")[0]?.textContent);
+          const road = items[i].getElementsByTagName("road")[0]?.textContent;
+          const reason = items[i].getElementsByTagName("reason")[0]?.textContent;
+
+          if (type === "通行止") {
+            L.marker([lat, lon], {
+              icon: L.divIcon({
+                className: "traffic-icon",
+                html: "🚧",
+                iconSize: [20, 20]
+              })
+            })
+            .addTo(map)
+            .bindPopup(`<b>${road}</b><br>${reason}`);
+          }
+        }
+      });
+
+    // ▼ OpenWeatherMap 雨量情報 ▼
+    const apiKey = "1e0037b35b9c3f8906cc222beac04c04"; // あなたのAPIキー
     fetch(`https://api.openweathermap.org/data/2.5/weather?lat=35.42&lon=136.76&units=metric&appid=${apiKey}&lang=ja`)
       .then(response => response.json())
       .then(data => {
@@ -44,4 +78,5 @@
   </script>
 </body>
 </html>
+
 
