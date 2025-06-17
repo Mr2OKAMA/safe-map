@@ -54,12 +54,7 @@
   // L.circle(...), L.polyline(...), L.marker(...), .bindPopup(...) など
 
 </script>
-
-</body>
-</html>
-<script>
-<body>
-  <html>
+  <script>
     // ▼ 気象警報・注意報 ▼
     fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=35.42&lon=136.76&exclude=hourly,daily&appid=${apiKey}&lang=ja`)
       .then(response => response.json())
