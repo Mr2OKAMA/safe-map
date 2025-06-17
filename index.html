@@ -12,16 +12,36 @@
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- Leaflet JS 読み込み -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script>
-    const map = L.map('map').setView([35.4067, 136.8485], 11); // 岐阜県中部の中心
+    // 地図の初期化
+    const map = L.map('map').setView([35.4067, 136.8485], 11); // 岐阜県中部
+
+    // タイルレイヤー追加（OpenStreetMap）
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // テスト用のマーカー
+    // 中心マーカー
     L.marker([35.4067, 136.8485]).addTo(map)
       .bindPopup('ここが岐阜県の中心付近です');
+
+    // ▼ OpenWeatherMap API ▼
+    const apiKey = "1e0037b35b9c3f8906cc222beac04c04"; // ← OpenWeatherMap で取得したキーを入れてください
+
+    // 岐阜市の天気データ取得
+    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=35.42&lon=136.76&units=metric&appid=${apiKey}&lang=ja`)
+      .then(response => response.json())
+      .then(data => {
+        const rain = data.rain ? data.rain['1h'] || 0 : 0;
+        L.marker([35.42, 136.76]).addTo(map)
+          .bindPopup(`岐阜市<br>現在の雨量: ${rain} mm/h`)
+          .openPopup();
+      });
   </script>
 </body>
 </html>
+
